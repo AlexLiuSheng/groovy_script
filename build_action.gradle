@@ -1,0 +1,70 @@
+apply plugin: 'com.android.application'
+
+import groovy.transform.Field
+
+@Field String basePath = '/Users/a/AndroidStuidoProjects/Bx-Sdk-Demo/host/src/main/'
+def targetPath = basePath + 'assets/plugins/'
+@Field String startActivity = 'com.example.allenliu.myapplication3.MainActivity'
+@Field String appId = "sss"
+setResourceName()
+
+android {
+    applicationVariants.all { variant ->
+
+        variant.outputs.all { output ->
+            def outputFile = output.outputFile
+            if (outputFile != null && outputFile.name.endsWith('.apk')) {
+                outputFileName = "${applicationId}.jar"
+
+            }
+        }
+        variant.assemble.doLast {
+            //copy the apk in another directory, add here your
+            //logic to customize the destination folder
+            copy {
+                from variant.outputs*.outputFile
+                into targetPath
+            }
+            //if you don't want to delete the file after copying it comment the line below
+//                delete variant.outputs*.outputFile
+        }
+
+    }
+
+
+}
+
+def setResourceName() {
+    setResource("package_name", android.defaultConfig.applicationId)
+    setResource("start_activity", startActivity)
+    setResource("app_id", appId)
+
+//    new XmlNodePrinter(new PrintWriter(new FileWriter(stringPath))).print(xml)
+}
+
+def setResource(def key, def value) {
+    def stringPath = basePath + "res/values/strings.xml"
+    def xml = new XmlParser().parse(stringPath)
+    def needAdd = true
+    xml.each {
+        if (it.@name != null && key == it.@name) {
+            it.@name = key
+            it.value = value
+            needAdd = false
+        }
+    }
+    if (needAdd) {
+        xml.appendNode("string", ["name": key], value)
+    }
+    new File(stringPath).withPrintWriter {
+        out ->
+            def printer = new XmlNodePrinter(out)
+            printer.preserveWhitespace = true
+            printer.print(xml)
+    }
+}
+
+//task setResourceName{
+//
+//
+//}
